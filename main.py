@@ -43,23 +43,31 @@ FCM_ENDPOINT = f"https://fcm.googleapis.com/v1/projects/{FCM_PROJECT_ID}/message
 def get_fcm_access_token():
     """Generate OAuth 2.0 access token for FCM V1 API."""
     if not SERVICE_ACCOUNT_JSON:
-        logging.error("SERVICE_ACCOUNT_JSON not found in .env file")
+        logging.error("SERVICE_ACCOUNT_JSON not found in environment variables")
         return None
 
     try:
+        # Parse the SERVICE_ACCOUNT_JSON string
+        credentials_dict = json.loads(SERVICE_ACCOUNT_JSON)
+        logging.info("SERVICE_ACCOUNT_JSON parsed successfully")
+
         # Create a temporary file with the JSON content
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
-            json.dump(json.loads(SERVICE_ACCOUNT_JSON), temp_file)
+            json.dump(credentials_dict, temp_file)
             temp_file_path = temp_file.name
 
         credentials = service_account.Credentials.from_service_account_file(
             temp_file_path, scopes=FCM_SCOPES)
         credentials.refresh(Request())
         token = credentials.token
+        logging.info("FCM access token generated successfully")
 
         # Clean up temporary file
         os.unlink(temp_file_path)
         return token
+    except json.JSONDecodeError as e:
+        logging.error(f"Invalid JSON format in SERVICE_ACCOUNT_JSON: {str(e)}")
+        return None
     except Exception as e:
         logging.error(f"Failed to get FCM access token: {str(e)}")
         return None
@@ -72,11 +80,11 @@ def send_notification(title: str, message: str, image_url: str = None) -> None:
     ist = pytz.timezone('Asia/Kolkata')
     ist_time = datetime.datetime.now(ist)
     print(f"\n[{title} at {ist_time}]\n{message}\n")
-    logging.info(f"Sent notification: {title} at {ist_time}")
+    logging.info(f"Attempting to send notification: {title} at {ist_time}")
 
     access_token = get_fcm_access_token()
     if not access_token:
-        logging.error("Cannot send FCM notification: No access token")
+        logging.error("Cannot send FCM notification: No access token available")
         return
 
     headers = {
@@ -107,9 +115,15 @@ def send_notification(title: str, message: str, image_url: str = None) -> None:
     try:
         response = requests.post(FCM_ENDPOINT, json=payload, headers=headers)
         response.raise_for_status()
-        logging.info(f"FCM notification sent: {response.json()}")
+        logging.info(f"FCM notification sent successfully: {response.json()}")
     except requests.RequestException as e:
         logging.error(f"Failed to send FCM notification: {str(e)}")
+        if e.response is not None:
+            logging.error(f"FCM response: {e.response.text}")
+        else:
+            logging.error("No response received from FCM server")
+    except Exception as e:
+        logging.error(f"Unexpected error while sending FCM notification: {str(e)}")
 
 # 🧠 Learning content generator
 def get_learning_content(topic: str) -> str:
