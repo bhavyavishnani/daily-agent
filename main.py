@@ -1,21 +1,20 @@
-import google.generativeai as genai
-import os
-import logging
-from dotenv import load_dotenv
-from google.api_core.exceptions import GoogleAPIError
 import schedule
 import time as time_module
-from datetime import datetime
+import logging
+import datetime
+import pytz
 from datetime import time as datetime_time
-import signal
+from dotenv import load_dotenv
+import os
 import sys
+import signal
 import requests
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 import json
 import tempfile
 import unicodedata
-import pytz
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -70,8 +69,10 @@ TECH_TOPICS = ["AI", "Flutter", "React Native", "SQL", "DevOps"]
 
 # 🔔 Notification function
 def send_notification(title: str, message: str, image_url: str = None) -> None:
-    print(f"\n[{title}]\n{message}\n")
-    logging.info(f"Sent notification: {title}")
+    ist = pytz.timezone('Asia/Kolkata')
+    ist_time = datetime.datetime.now(ist)
+    print(f"\n[{title} at {ist_time}]\n{message}\n")
+    logging.info(f"Sent notification: {title} at {ist_time}")
 
     access_token = get_fcm_access_token()
     if not access_token:
@@ -90,8 +91,15 @@ def send_notification(title: str, message: str, image_url: str = None) -> None:
                 "title": title,
                 "body": message
             },
+            "android": {
+                "notification": {
+                    "channel_id": "high_importance_channel",
+                    "priority": "high"
+                }
+            },
             "data": {
-                "image": image_url or ""  # Add image URL to data payload
+                "image": image_url or "",
+                "click_action": "FLUTTER_NOTIFICATION_CLICK"
             }
         }
     }
@@ -120,9 +128,6 @@ def get_learning_content(topic: str) -> str:
             return f"Error: No content generated for {topic}"
         logging.info(f"Generated content for {topic}")
         return content
-    except GoogleAPIError as e:
-        logging.error(f"API error for {topic}: {str(e)}")
-        return f"Error: {str(e)}"
     except Exception as e:
         logging.error(f"Unexpected error for {topic}: {str(e)}")
         return f"Error: {str(e)}"
@@ -140,9 +145,6 @@ def get_news_update() -> str:
             return "Error: No news content generated"
         logging.info("Generated news update")
         return content
-    except GoogleAPIError as e:
-        logging.error(f"API error for news: {str(e)}")
-        return f"Error: {str(e)}"
     except Exception as e:
         logging.error(f"Unexpected error for news: {str(e)}")
         return f"Error: {str(e)}"
@@ -160,9 +162,6 @@ def get_meme_update() -> str:
             return "Error: No meme content generated"
         logging.info("Generated meme update")
         return content
-    except GoogleAPIError as e:
-        logging.error(f"API error for meme: {str(e)}")
-        return f"Error: {str(e)}"
     except Exception as e:
         logging.error(f"Unexpected error for meme: {str(e)}")
         return f"Error: {str(e)}"
@@ -205,35 +204,51 @@ def send_meme() -> None:
     meme = get_meme_update()
     send_notification("😂 Programming Meme", meme)
 
-# ⏰ Check active hours (11:30 AM to 11:30 PM)
+# ⏰ Check active hours (11:30 AM to 11:30 PM IST)
 def is_within_active_hours() -> bool:
     """Check if current time is within active hours (11:30 AM to 11:30 PM IST)."""
     ist = pytz.timezone('Asia/Kolkata')
-    now = datetime.now(ist).time()
-    start = datetime_time(1, 00)
-    end = datetime_time(8, 30)
+    now = datetime.datetime.now(ist).time()
+    start = datetime_time(2, 00)  # 11:30 AM IST
+    end = datetime_time(8, 30)    # 11:30 PM IST
     return start <= now <= end
 
 # 🔄 Scheduler runner
 def run_scheduler() -> None:
-    """Run the scheduler to execute tasks at specified times."""
-    schedule.every().day.at("01:55").do(send_tech_digest)
-    schedule.every().day.at("01:56").do(send_evening_tech_digest)
-    schedule.every().day.at("01:56").do(send_news)
-    schedule.every().day.at("01:56").do(send_meme)
+    """Run the scheduler to execute tasks at specified times in IST."""
+    ist = pytz.timezone('Asia/Kolkata')
+    
+    # Schedule tasks in IST (converted to UTC for the scheduler)
+    schedule.every().day.at("02:15").do(send_tech_digest)          # 11:30 AM IST
+    schedule.every().day.at("02:16").do(send_news)                 # 1:00 PM IST
+    schedule.every().day.at("02:16").do(send_evening_tech_digest)  # 5:00 PM IST
+    schedule.every().day.at("02:16").do(send_meme)                 # 8:00 PM IST
 
+    # Log current time for debugging
+    ist_time = datetime.datetime.now(ist)
+    utc_time = datetime.datetime.utcnow()
+    logging.info(f"Current IST time: {ist_time}")
+    logging.info(f"Current UTC time: {utc_time}")
     logging.info("Scheduler started. Waiting for tasks...")
 
     while True:
         try:
+            pending_jobs = schedule.get_jobs()
+            ist_time = datetime.datetime.now(ist)
+            logging.info(f"Pending jobs at {ist_time}: {pending_jobs}")
+            
             if is_within_active_hours():
                 schedule.run_pending()
+                logging.info(f"Checked for pending tasks at {ist_time}")
             else:
-                logging.debug("Outside active hours (11:30 AM - 11:30 PM). Idle...")
+                logging.debug("Outside active hours (11:30 AM - 11:30 PM IST). Idle...")
             time_module.sleep(60)
         except KeyboardInterrupt:
             logging.info("Scheduler stopped by user")
             break
+        except Exception as e:
+            logging.error(f"Unexpected error in scheduler loop: {str(e)}")
+            time_module.sleep(60)
 
 # Handle graceful shutdown
 def signal_handler(sig, frame) -> None:
@@ -247,6 +262,9 @@ if __name__ == "__main__":
         import io
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
         sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
+    # Send an immediate test notification
+    send_notification("Test Notification", "This is a test notification sent immediately.")
 
     signal.signal(signal.SIGINT, signal_handler)
     run_scheduler()
