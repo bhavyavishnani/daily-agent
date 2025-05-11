@@ -101,8 +101,7 @@ def send_notification(title: str, message: str, image_url: str = None) -> None:
             },
             "android": {
                 "notification": {
-                    "channel_id": "high_importance_channel",
-                    "priority": "high"
+                    "channel_id": "high_importance_channel"
                 }
             },
             "data": {
