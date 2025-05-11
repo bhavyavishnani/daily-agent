@@ -209,24 +209,25 @@ def is_within_active_hours() -> bool:
     """Check if current time is within active hours (11:30 AM to 11:30 PM IST)."""
     ist = pytz.timezone('Asia/Kolkata')
     now = datetime.datetime.now(ist).time()
-    start = datetime_time(2, 00)  # 11:30 AM IST
-    end = datetime_time(8, 30)    # 11:30 PM IST
+    start = datetime_time(11, 30)  # 11:30 AM IST
+    end = datetime_time(23, 30)    # 11:30 PM IST
     return start <= now <= end
 
 # 🔄 Scheduler runner
 def run_scheduler() -> None:
     """Run the scheduler to execute tasks at specified times in IST."""
     ist = pytz.timezone('Asia/Kolkata')
+    utc = pytz.UTC
     
-    # Schedule tasks in IST (converted to UTC for the scheduler)
-    schedule.every().day.at("02:15").do(send_tech_digest)          # 11:30 AM IST
-    schedule.every().day.at("02:16").do(send_news)                 # 1:00 PM IST
-    schedule.every().day.at("02:16").do(send_evening_tech_digest)  # 5:00 PM IST
-    schedule.every().day.at("02:16").do(send_meme)                 # 8:00 PM IST
+    # Schedule tasks in IST (system time is already IST due to TZ=Asia/Kolkata)
+    schedule.every().day.at("11:30").do(send_tech_digest)          # 11:30 AM IST
+    schedule.every().day.at("13:00").do(send_news)                 # 1:00 PM IST
+    schedule.every().day.at("17:00").do(send_evening_tech_digest)  # 5:00 PM IST
+    schedule.every().day.at("20:00").do(send_meme)                 # 8:00 PM IST
 
     # Log current time for debugging
     ist_time = datetime.datetime.now(ist)
-    utc_time = datetime.datetime.utcnow()
+    utc_time = datetime.datetime.now(utc)
     logging.info(f"Current IST time: {ist_time}")
     logging.info(f"Current UTC time: {utc_time}")
     logging.info("Scheduler started. Waiting for tasks...")
