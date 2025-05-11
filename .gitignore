@@ -1,0 +1,17 @@
+# Don't track environment variables
+.env
+
+# Don't track Python cache
+__pycache__/
+*.py[cod]
+
+# Don't track virtual environment folders
+venv/
+env/
+.venv/
+
+# Don't track logs
+*.log
+
+# macOS system files (if using macOS)
+.DS_Store
