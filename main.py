@@ -112,7 +112,7 @@ def get_learning_content(topic: str) -> str:
     
     try:
         model = genai.GenerativeModel(model_name="gemini-1.5-flash")
-        prompt = f"Explain a useful concept or coding technique in {topic} with an example in 5-7 lines."
+        prompt = f"Explain a useful concept or coding technique in {topic} with an example in 5-7 lines in hinglish."
         response = model.generate_content(prompt)
         content = response.text.strip() if response.text else ""
         if not content:
@@ -132,7 +132,7 @@ def get_news_update() -> str:
     """Fetch a 2-line summary of today's tech/AI news."""
     try:
         model = genai.GenerativeModel(model_name="gemini-1.5-flash")
-        prompt = "Give me a 2-line summary of today’s latest global tech or AI news."
+        prompt = "Give me a 2-line summary of today’s latest global tech or AI news in hinglish."
         response = model.generate_content(prompt)
         content = response.text.strip() if response.text else ""
         if not content:
@@ -152,7 +152,7 @@ def get_meme_update() -> str:
     """Fetch a short programming meme or joke."""
     try:
         model = genai.GenerativeModel(model_name="gemini-1.5-flash")
-        prompt = "Share a short, funny programming meme or joke in 1-2 lines."
+        prompt = "Share a short, funny programming meme or joke in 1-2 lines in hinglish."
         response = model.generate_content(prompt)
         content = response.text.strip() if response.text else ""
         if not content:
@@ -210,17 +210,17 @@ def is_within_active_hours() -> bool:
     """Check if current time is within active hours (11:30 AM to 11:30 PM IST)."""
     ist = pytz.timezone('Asia/Kolkata')
     now = datetime.now(ist).time()
-    start = datetime_time(11, 30)
-    end = datetime_time(23, 30)
+    start = datetime_time(1, 00)
+    end = datetime_time(8, 30)
     return start <= now <= end
 
 # 🔄 Scheduler runner
 def run_scheduler() -> None:
     """Run the scheduler to execute tasks at specified times."""
-    schedule.every().day.at("00:57").do(send_tech_digest)
-    schedule.every().day.at("00:58").do(send_evening_tech_digest)
-    schedule.every().day.at("00:59").do(send_news)
-    schedule.every().day.at("01:00").do(send_meme)
+    schedule.every().day.at("01:55").do(send_tech_digest)
+    schedule.every().day.at("01:56").do(send_evening_tech_digest)
+    schedule.every().day.at("01:56").do(send_news)
+    schedule.every().day.at("01:56").do(send_meme)
 
     logging.info("Scheduler started. Waiting for tasks...")
 
