@@ -217,10 +217,10 @@ def is_within_active_hours() -> bool:
 # 🔄 Scheduler runner
 def run_scheduler() -> None:
     """Run the scheduler to execute tasks at specified times."""
-    schedule.every().day.at("11:30").do(send_tech_digest)
-    schedule.every().day.at("17:00").do(send_evening_tech_digest)
-    schedule.every().day.at("17:04").do(send_news)
-    schedule.every().day.at("17:05").do(send_meme)
+    schedule.every().day.at("00:57").do(send_tech_digest)
+    schedule.every().day.at("00:58").do(send_evening_tech_digest)
+    schedule.every().day.at("00:59").do(send_news)
+    schedule.every().day.at("01:00").do(send_meme)
 
     logging.info("Scheduler started. Waiting for tasks...")
 
