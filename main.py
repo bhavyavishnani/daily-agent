@@ -6,6 +6,7 @@ from google.api_core.exceptions import GoogleAPIError
 import schedule
 import time
 from datetime import datetime
+import pytz
 
 # Load API Key
 load_dotenv()
@@ -85,11 +86,13 @@ def send_meme():
 
 # ⏰ Check active hours (11:30 AM to 11:30 PM)
 def is_within_active_hours():
-    now = datetime.now().time()
-    start = datetime.strptime("11:30", "%H:%M").time()
-    end = datetime.strptime("23:30", "%H:%M").time()
+    ist = pytz.timezone('Asia/Kolkata')
+    now = datetime.now(ist).time()  # <-- This ensures IST
+    start = time(11, 30)
+    end = time(23, 30)
     return start <= now <= end
 
+    
 # 🔄 Scheduler runner
 def run_scheduler():
     # Schedule jobs
